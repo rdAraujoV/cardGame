@@ -1,0 +1,119 @@
+[
+  {
+    "name": "Pat",
+    "type": "RANGED",
+    "description": "Notorious assassin of the Secret Clan of Assassins of Metropolis City",
+    "hp": 3,
+    "damage": 5,
+    "design": null,
+    "set": "Metropolis"
+  },
+  {
+    "name": "Christian",
+    "type": "MELEE",
+    "description": "The leader of the Secret Clan of Assassins of Metropolis City",
+    "hp": 7,
+    "damage": 8,
+    "design": null,
+    "set": "Metropolis"
+  },
+  {
+    "name": "Mike the Drunkard",
+    "type": "MELEE",
+    "description": "A beggar from Metropolis City",
+    "hp": 2,
+    "damage": 2,
+    "design": null,
+    "set": "Metropolis"
+  },
+  {
+    "name": "Mayor John",
+    "type": "MELEE",
+    "description": "The mayor of Metropolis City",
+    "hp": 7,
+    "damage": 8,
+    "design": null,
+    "set": "Metropolis"
+  },
+  {
+    "name": "James the Actor",
+    "type": "MELEE",
+    "description": "Actor from the Metropolis Theater",
+    "hp": 3,
+    "damage": 5,
+    "design": null,
+    "set": "Metropolis"
+  },
+  {
+    "name": "Jordan the Shepherd",
+    "type": "RANGED",
+    "description": "The greatest Shepherd of Metropolis City",
+    "hp": 7,
+    "damage": 9,
+    "design": null,
+    "set": "Metropolis"
+  },
+  {
+    "name": "Myung Sensei",
+    "type": "MELEE",
+    "description": "The Sensei of the Karate Academy",
+    "hp": 5,
+    "damage": 9,
+    "design": null,
+    "set": "Metropolis"
+  },
+  {
+    "name": "Mike the Therapist",
+    "type": "RANGED",
+    "description": "The therapist of the Rehabilitation Clinic",
+    "hp": 6,
+    "damage": 7,
+    "design": null,
+    "set": "Metropolis"
+  },
+  {
+    "name": "Rehabilitation Clinic",
+    "type": "STRUCTURE",
+    "description": "The Rehabilitation Clinic of Metropolis City",
+    "hp": 8,
+    "damage": 0,
+    "design": null,
+    "set": "Metropolis"
+  },
+  {
+    "name": "Metropolis City Hall",
+    "type": "STRUCTURE",
+    "description": "The Metropolis City Hall",
+    "hp": 10,
+    "damage": 2,
+    "design": null,
+    "set": "Metropolis"
+  },
+  {
+    "name": "Police Department",
+    "type": "STRUCTURE",
+    "description": "Police Department",
+    "hp": 10,
+    "damage": 4,
+    "design": null,
+    "set": "Metropolis"
+  },
+  {
+    "name": "Church",
+    "type": "STRUCTURE",
+    "description": "The Church of Metropolis City",
+    "hp": 14,
+    "damage": 0,
+    "design": null,
+    "set": "Metropolis"
+  },
+  {
+    "name": "Anna",
+    "type": "MELEE",
+    "description": "A fierce melee warrior.",
+    "hp": 5,
+    "damage": 3,
+    "design": null,
+    "set": "Metropolis"
+  }
+]
