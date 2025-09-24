@@ -26,7 +26,7 @@ class ActionTest {
     }
 
     @Test
-    @DisplayName("Deve retirar uma carta do deck e coloca-la na mão do jogador")
+    @DisplayName("Should draw cards from the deck into the player's hand")
     void testDrawHand() {
         // 1. Arrange
         int initialDeckSize = playerA.getDeck().size();
@@ -41,7 +41,7 @@ class ActionTest {
     }
 
     @Test
-    @DisplayName("Deve tirar uma carta da mão, e posiciona-la em uma fileira to battlefield")
+    @DisplayName("Should play a card from hand to a battlefield row")
     void testUseCard() {
         // 1. Arrange
         playerA.getHand().drawHand(playerA.getDeck(), 1);
@@ -59,7 +59,26 @@ class ActionTest {
     }
 
     @Test
-    @DisplayName("Deve mover uma carta de uma fileira para outra")
+    @DisplayName("Should not add a card to a row if it's already there from a second useCard call")
+    void testUseCardAgain(){
+        // 1. Arrange
+        playerA.getHand().drawHand(playerA.getDeck(), 1);
+
+        Card cardToPlay = playerA.getHand().getCards().get(0);
+        Row targetRow = battlefield.getBackRowA();
+        // First call to place the card
+        Action.useCard(playerA, cardToPlay, targetRow);
+        
+        // 2. Act
+        Action.useCard(playerA, cardToPlay, targetRow); // Second call, should do nothing
+
+        // 3. Assert
+        assertEquals(1, targetRow.getCards().size(), "The card should not be added to the row a second time.");
+        assertEquals(1, playerA.getPlayedCards().size(), "The card should not be added to playedCards a second time.");
+    }
+
+    @Test
+    @DisplayName("Should move a card from one row to another")
     void testMoveCard() {
         // 1. Arrange
         playerA.getHand().drawHand(playerA.getDeck(), 1);
@@ -80,7 +99,7 @@ class ActionTest {
     }
 
     @Test
-    @DisplayName("Deve causar a quantidade exata de dano na carta do adversaris")
+    @DisplayName("Should deal the correct amount of damage to a target card")
     void testAttackCard_Damage() {
         // 1. Arrange
         Card attackingCard = new Card("Anna", "Desc", Type.MELEE, 5, 3, null, "Set"); // 3 Damage
@@ -101,7 +120,7 @@ class ActionTest {
     }
 
     @Test
-    @DisplayName("Deve eliminar a carta do adversario")
+    @DisplayName("Should destroy a card when its HP drops to 0 or less")
     void testAttackCard_Destroy() {
         // 1. Arrange
         Card attackingCard = new Card("Jordan", "Desc", Type.MELEE, 5, 8, null, "Set"); // 8 Damage
@@ -123,7 +142,7 @@ class ActionTest {
     }
 
     @Test
-    @DisplayName("A carta deve causar 1 de dano no player adversaio")
+    @DisplayName("Should deal 1 damage to the opponent player if attacking from the correct row")
     void testAttackPlayer() {
         // 1. Arrange
 
@@ -140,7 +159,7 @@ class ActionTest {
     }
 
     @Test
-    @DisplayName("A carta esta em uma posição invalida, portanto nao pode causar dano ao adversario")
+    @DisplayName("Should not deal damage to the opponent player if attacking from an invalid row")
     void testAttackPlayerInvalidPosition() {
         // 1. Arrange
         Card attackingCard = new Card("Anna", "Desc", Type.MELEE, 5, 3, null, "Set");

@@ -5,6 +5,10 @@ public class Action {
     // methods
 
     public static void useCard(Player player, Card card, Row chosenRow) {
+        
+        if (player.getPlayedCards().contains(card)) {
+            return;
+        }
         player.getHand().removeCard(card);
         card.setOwner(player); 
         chosenRow.addCard(card);
