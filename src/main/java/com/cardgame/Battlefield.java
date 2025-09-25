@@ -9,12 +9,12 @@ public class Battlefield {
     private Row backRowA;
 
     public Battlefield() {
-        this.backRowA = new Row();
-        this.midRowA = new Row();
-        this.frontRowA = new Row();
-        this.frontRowB = new Row();
-        this.midRowB = new Row();
-        this.backRowB = new Row();
+        this.backRowA = new Row('A');
+        this.midRowA = new Row('A');
+        this.frontRowA = new Row('A');
+        this.frontRowB = new Row('B');
+        this.midRowB = new Row('B');
+        this.backRowB = new Row('B');
     }
 
     // getters

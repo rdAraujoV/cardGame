@@ -10,6 +10,7 @@ class ActionTest {
     private Player playerA;
     private Player playerB;
     private Battlefield battlefield;
+    private GameLogic logic;
 
     @BeforeEach
     void setUp() {
@@ -23,6 +24,7 @@ class ActionTest {
         playerA = Player.createPlayer("TesterA", deckA, 'A');
         playerB = Player.createPlayer("TesterB", deckB, 'B');
         battlefield = new Battlefield();
+        logic = new GameLogic();
     }
 
     @Test
@@ -50,7 +52,7 @@ class ActionTest {
         Row targetRow = battlefield.getBackRowA();
 
         // 2. Act:
-        Action.useCard(playerA, cardToPlay, targetRow);
+        Action.useCard(playerA, cardToPlay, targetRow, logic);
 
         // 3. Assert:
         assertTrue(targetRow.getCards().contains(cardToPlay));
@@ -60,21 +62,38 @@ class ActionTest {
 
     @Test
     @DisplayName("Should not add a card to a row if it's already there from a second useCard call")
-    void testUseCardAgain(){
+    void testUseCardAgain() {
         // 1. Arrange
         playerA.getHand().drawHand(playerA.getDeck(), 1);
 
         Card cardToPlay = playerA.getHand().getCards().get(0);
         Row targetRow = battlefield.getBackRowA();
         // First call to place the card
-        Action.useCard(playerA, cardToPlay, targetRow);
-        
+        Action.useCard(playerA, cardToPlay, targetRow, logic);
+
         // 2. Act
-        Action.useCard(playerA, cardToPlay, targetRow); // Second call, should do nothing
+        Action.useCard(playerA, cardToPlay, targetRow, logic); // Second call, should do nothing
 
         // 3. Assert
         assertEquals(1, targetRow.getCards().size(), "The card should not be added to the row a second time.");
         assertEquals(1, playerA.getPlayedCards().size(), "The card should not be added to playedCards a second time.");
+    }
+
+    @Test
+    @DisplayName("Should not add card to the enemy row if its the first turn")
+    void testUseCardEnemyRowFirstTurn() {
+        // 1. Arrange
+        playerA.getHand().drawHand(playerA.getDeck(), 1);
+
+        Card cardToPlay = playerA.getHand().getCards().get(0);
+        Row targetRow = battlefield.getFrontRowB();
+
+        // 2. Act
+        Action.useCard(playerA, cardToPlay, targetRow, logic);
+
+        // 3. Assert
+        assertFalse(targetRow.getCards().contains(cardToPlay));
+
     }
 
     @Test
@@ -85,7 +104,7 @@ class ActionTest {
 
         Card cardToPlay = playerA.getHand().getCards().get(0);
         Row startingRow = battlefield.getBackRowA();
-        Action.useCard(playerA, cardToPlay, startingRow);
+        Action.useCard(playerA, cardToPlay, startingRow, logic);
 
         // 2. Act
         Row newRow = battlefield.getMidRowA();
@@ -109,8 +128,8 @@ class ActionTest {
         playerB.getHand().getCards().add(targetCard);
         int initialTargetHp = targetCard.getHp();
 
-        Action.useCard(playerA, attackingCard, battlefield.getFrontRowA());
-        Action.useCard(playerB, targetCard, battlefield.getFrontRowB());
+        Action.useCard(playerA, attackingCard, battlefield.getFrontRowA(), logic);
+        Action.useCard(playerB, targetCard, battlefield.getFrontRowB(), logic);
 
         // 2. Act
         Action.attackCard(playerA, playerB, attackingCard, targetCard);
@@ -130,8 +149,8 @@ class ActionTest {
         playerB.getHand().getCards().add(targetCard);
 
         Row targetRow = battlefield.getFrontRowB();
-        Action.useCard(playerA, attackingCard, battlefield.getFrontRowA());
-        Action.useCard(playerB, targetCard, targetRow);
+        Action.useCard(playerA, attackingCard, battlefield.getFrontRowA(), logic);
+        Action.useCard(playerB, targetCard, targetRow, logic);
 
         // 2. Act
         Action.attackCard(playerA, playerB, attackingCard, targetCard);
@@ -142,13 +161,40 @@ class ActionTest {
     }
 
     @Test
+    @DisplayName("Should instakill card on the same row")
+    void testAttackCard_InstaKill() {
+        // 1. Arrange
+        // Player B attacks Player A
+        Card attackingCard = new Card("Jordan", "Desc", Type.MELEE, 5, 1, null, "Set"); // Low damage
+        playerB.getHand().getCards().add(attackingCard);
+
+        Card targetCard = new Card("Metropolis City Hall", "Desc", Type.STRUCTURE, 10, 2, null, "Set"); // 10 HP
+        playerA.getHand().getCards().add(targetCard);
+
+        Row targetRow = battlefield.getFrontRowB();
+        // Both cards are placed on the same row, but owned by different players
+        Action.useCard(playerB, attackingCard, targetRow, logic);
+        Action.useCard(playerA, targetCard, targetRow, logic);
+
+        // 2. Act
+        Action.attackCard(playerB, playerA, attackingCard, targetCard);
+
+        // 3. Assert
+        assertFalse(targetRow.getCards().contains(targetCard));
+        assertFalse(playerA.getPlayedCards().contains(targetCard), "Target card should be removed from its owner's played cards.");
+    }
+
+    @Test
     @DisplayName("Should deal 1 damage to the opponent player if attacking from the correct row")
     void testAttackPlayer() {
         // 1. Arrange
 
         Card attackingCard = new Card("Anna", "Desc", Type.MELEE, 5, 3, null, "Set");
         playerA.getHand().getCards().add(attackingCard);
-        Action.useCard(playerA, attackingCard, battlefield.getBackRowB());
+        // Advance turn to allow playing on enemy rows
+        logic.setTurnCount(3);
+        // Place card on opponent's back row
+        Action.useCard(playerA, attackingCard, battlefield.getBackRowB(), logic);
 
         // 2. Act
         int initialTargetLife = playerB.getLife();
@@ -164,7 +210,7 @@ class ActionTest {
         // 1. Arrange
         Card attackingCard = new Card("Anna", "Desc", Type.MELEE, 5, 3, null, "Set");
         playerA.getHand().getCards().add(attackingCard);
-        Action.useCard(playerA, attackingCard, battlefield.getMidRowB());
+        Action.useCard(playerA, attackingCard, battlefield.getMidRowB(), logic);
 
         // 2. Act
         int initialTargetLife = playerB.getLife();

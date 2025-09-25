@@ -1,44 +1,51 @@
 package com.cardgame;
 
 public class Action {
-
     // methods
+    public static void useCard(Player player, Card card, Row chosenRow, GameLogic logic) {
 
-    public static void useCard(Player player, Card card, Row chosenRow) {
-        
         if (player.getPlayedCards().contains(card)) {
             return;
         }
+        // Stop the action if the game logic determines the move is not allowed.
+        if (!logic.canPlayCard(player, chosenRow)) {
+            return;
+        }
         player.getHand().removeCard(card);
-        card.setOwner(player); 
+        card.setOwner(player);
         chosenRow.addCard(card);
         card.setPosition(chosenRow);
         player.getPlayedCards().add(card);
     }
-    public static void moveCard(Player player, Card card, Row newRow){
+
+    public static void moveCard(Player player, Card card, Row newRow) {
         if (!player.getPlayedCards().contains(card)) {
             return;
         }
-        
+
         Row oldRow = card.getPosition();
         if (oldRow != null) {
             oldRow.getCards().remove(card);
         }
-        
+
         newRow.addCard(card);
         card.setPosition(newRow);
     }
 
     public static void attackCard(Player attacker, Player target, Card attackingCard, Card targetCard) {
+        int damage = attackingCard.getDamage();
+        int targetHp = targetCard.getHp();
+
         if (!attacker.getPlayedCards().contains(attackingCard)) {
             return;
         }
         if (!target.getPlayedCards().contains(targetCard)) {
             return;
         }
+        if (attackingCard.getPosition() == targetCard.getPosition()) { // instaKill same row
+            damage = targetCard.getHp();
+        }
 
-        int damage = attackingCard.getDamage();
-        int targetHp = targetCard.getHp();
         targetHp -= damage;
 
         targetCard.setHp(targetHp);
@@ -55,7 +62,8 @@ public class Action {
         }
 
         // A card can attack the opponent directly if it's in the opponent's back row.
-        boolean canAttackPlayer = (attacker.getSide() == 'A' && attackingCard.getPosition() == battlefield.getBackRowB())
+        boolean canAttackPlayer = (attacker.getSide() == 'A'
+                && attackingCard.getPosition() == battlefield.getBackRowB())
                 || (attacker.getSide() == 'B' && attackingCard.getPosition() == battlefield.getBackRowA());
 
         if (canAttackPlayer) {

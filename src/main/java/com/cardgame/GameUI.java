@@ -2,11 +2,14 @@ package com.cardgame;
 
 import java.util.List;
 
+import javafx.animation.PauseTransition;
 import javafx.application.Application;
+import javafx.util.Duration;
 import javafx.geometry.Insets;
 import javafx.geometry.Pos;
 import javafx.scene.control.Button;
 import javafx.scene.control.Label;
+import javafx.scene.Node;
 import javafx.scene.Scene;
 import javafx.scene.layout.BorderPane;
 import javafx.scene.layout.GridPane;
@@ -20,132 +23,140 @@ import javafx.scene.shape.Rectangle;
 import javafx.stage.Stage;
 
 public class GameUI extends Application {
-    // consts
-    private static final double CARD_WIDTH = 80;
-    private static final double CARD_HEIGHT = 100;
-    private static final double PADDING = 5;
-    // logic
-    private Battlefield battlefield;
-    private Player playerA;
-    private Player playerB;
+    // Constantes de Layout
+    private static final double CARD_WIDTH = 80, CARD_HEIGHT = 112, PADDING = 10;
+    
+    // Logic
+    private GameLogic game; 
 
-    // UI
+    // Componentes da UI
     private StackPane selectedCardView = null;
     private StackPane attackingCardView = null;
-    private HBox playerAHandBox;
-    private HBox playerBHandBox;
+    private HBox playerAHandBox, playerBHandBox;
     private GridPane battlefieldGrid;
-    private Circle playerAIndicator;
-    private Circle playerBIndicator;
-    private Label playerALifeLabel;
-    private Label playerBLifeLabel;
+    private Circle playerAIndicator, playerBIndicator;
+    private Label playerALifeLabel, playerBLifeLabel;
     private Button endTurnButton;
-
-    // outros
-    private Player activePlayer;
-    private boolean isPlayerTurn = true;
-    private boolean playerHasActed = false;
-
-    private void initializeGameLogic() {
-        this.battlefield = new Battlefield();
-
-        List<Card> allCards = CardLoader.loadCards();
-
-        Deck deckA = DeckFactory.createDeck("Metropolis", allCards);
-        this.playerA = Player.createPlayer("Rodrigo", deckA, 'A');
-
-        Deck deckB = DeckFactory.createDeck("Metropolis", allCards);
-        this.playerB = Player.createPlayer("Portnoy", deckB, 'B');
-
-        this.playerA.getDeck().shuffle();
-        this.playerA.getHand().drawHand(this.playerA.getDeck(), 3);
-
-        this.playerB.getDeck().shuffle();
-        this.playerB.getHand().drawHand(this.playerB.getDeck(), 3);
-
-        this.activePlayer = this.playerA;
-        System.out.println("O turno começa com: " + this.activePlayer.getName());
-    }
 
     @Override
     public void start(Stage primaryStage) {
-        // --- 1. Inicialização ---
-        initializeGameLogic();
+        this.game = new GameLogic();
         primaryStage.setTitle("Card Game");
         BorderPane root = new BorderPane();
         Scene scene = new Scene(root, 1280, 720);
 
-        // --- 2. Painel Central: Campo de Batalha ---
-        this.battlefieldGrid = createBattlefieldView(this.battlefield);
+        // Montagem da UI
+        this.battlefieldGrid = createBattlefieldView(game.getBattlefield());
         root.setCenter(this.battlefieldGrid);
 
-        // --- 3. Painel Inferior: Jogador A ---
+        // Painel do Jogador A (Inferior)
         this.playerALifeLabel = new Label();
-        VBox playerAView = createPlayerView(playerA, this.playerALifeLabel);
-        this.playerAHandBox = createHandView(playerA.getHand().getCards());
+        VBox playerAView = createPlayerView(game.getPlayerA(), this.playerALifeLabel);
+        this.playerAHandBox = createHandView(game.getPlayerA().getHand().getCards());
         this.playerAIndicator = new Circle(15, Color.GOLD);
         this.playerAIndicator.setStroke(Color.BLACK);
-
         HBox bottomContainer = new HBox(30, playerAView, this.playerAHandBox, this.playerAIndicator);
-        bottomContainer.setPadding(new Insets(10));
+        bottomContainer.setPadding(new Insets(PADDING));
         bottomContainer.setAlignment(Pos.CENTER);
         root.setBottom(bottomContainer);
 
-        // --- 4. Painel Superior: Jogador B ---
+        // Painel do Jogador B (Superior)
         this.playerBLifeLabel = new Label();
-        VBox playerBView = createPlayerView(playerB, this.playerBLifeLabel);
-        this.playerBHandBox = createOpponentHandView(playerB.getHand().size());
+        VBox playerBView = createPlayerView(game.getPlayerB(), this.playerBLifeLabel);
+        this.playerBHandBox = createOpponentHandView(game.getPlayerB().getHand().size()); // CORRIGIDO
         this.playerBIndicator = new Circle(15, Color.GOLD);
         this.playerBIndicator.setStroke(Color.BLACK);
-
         HBox topContainer = new HBox(30, playerBView, this.playerBHandBox, this.playerBIndicator);
-        topContainer.setPadding(new Insets(10));
+        topContainer.setPadding(new Insets(PADDING));
         topContainer.setAlignment(Pos.CENTER);
         root.setTop(topContainer);
-
+        
         playerBView.setOnMouseClicked(event -> {
-            // A ação só acontece se for o turno do jogador, ele não tiver agido, e uma
-            // carta atacante estiver selecionada
-            if (isPlayerTurn && !playerHasActed && attackingCardView != null) {
-
-                // 1. Pega a carta atacante
+            if (game.isPlayerTurn() && !game.hasPlayerActed() && attackingCardView != null) {
                 Card attackingCard = (Card) attackingCardView.getUserData();
-
-                // 2. Chama a lógica do jogo
-                Action.attackPlayer(playerA, playerB, attackingCard, this.battlefield);
-
-                // 3. O jogador gasta sua ação
-                playerHasActed = true;
-
-                // 4. Atualiza a tela para mostrar a nova vida do oponente
+                Action.attackPlayer(game.getActivePlayer(), game.getPlayerB(), attackingCard, game.getBattlefield());
+                game.setPlayerHasActed(true);
                 updateUI();
             }
         });
 
-        // --- 5. Painel Direito: Ações ---
-        Button endTurnButton = new Button("Finalizar Turno");
-        endTurnButton.setPrefSize(120, 60);
-        endTurnButton.setOnAction(event -> endTurn());
-
-        VBox rightSideBar = new VBox(endTurnButton);
+        // Painel de Ações (Direita)
+        this.endTurnButton = new Button("Finalizar Turno");
+        this.endTurnButton.setPrefSize(120, 60);
+        this.endTurnButton.setOnAction(event -> endTurn());
+        VBox rightSideBar = new VBox(this.endTurnButton);
         rightSideBar.setAlignment(Pos.CENTER);
         rightSideBar.setPadding(new Insets(20));
         root.setRight(rightSideBar);
 
-        // --- 6. Montagem Final ---
+        
         primaryStage.setScene(scene);
         primaryStage.show();
-        updateUI(); // Chama no final para garantir o estado
+        updateUI();
+    }
+
+    private void endTurn() {
+        game.endTurn();
+        updateUI();
+        
+        if (!game.isPlayerTurn() && game.getWinner() == null) {
+            PauseTransition pause = new PauseTransition(Duration.seconds(1.5));
+            pause.setOnFinished(event -> executeOpponentTurn());
+            pause.play();
+        }
+    }
+
+    private void updateUI() {
+        // Mãos
+        playerAHandBox.getChildren().clear();
+        for (Card card : game.getPlayerA().getHand().getCards()) {
+            playerAHandBox.getChildren().add(createCardView(card, game.getPlayerA()));
+        }
+        playerBHandBox.getChildren().clear();
+        for (int i = 0; i < game.getPlayerB().getHand().size(); i++) {
+            playerBHandBox.getChildren().add(createCardBackView());
+        }
+
+        // Tabuleiro
+        for (javafx.scene.Node node : battlefieldGrid.getChildren()) {
+            if (node instanceof HBox) {
+                HBox rowBox = (HBox) node;
+                Row rowLogic = (Row) rowBox.getUserData();
+                rowBox.getChildren().clear();
+                if (rowLogic.getCards().isEmpty()) {
+                    for (int i = 0; i < 5; i++) rowBox.getChildren().add(createPlaceholder());
+                } else {
+                    for (Card card : rowLogic.getCards()) rowBox.getChildren().add(createCardView(card, card.getOwner()));
+                }
+            }
+        }
+
+        // Vidas e Indicadores
+        playerALifeLabel.setText("Vida: " + game.getPlayerA().getLife());
+        playerBLifeLabel.setText("Vida: " + game.getPlayerB().getLife());
+        playerAIndicator.setVisible(game.isPlayerTurn());
+        playerBIndicator.setVisible(!game.isPlayerTurn());
+
+        // Limpa seleção
+        if (selectedCardView != null) selectedCardView.setTranslateY(0);
+        if (attackingCardView != null) attackingCardView.setStyle("-fx-border-color: black;");
+        selectedCardView = null;
+        attackingCardView = null;
+
+        // Verifica vitória
+        Player winner = game.getWinner();
+        if (winner != null) {
+            showGameOverAlert("Vitória de " + winner.getName() + "!");
+        }
     }
 
     private VBox createPlayerView(Player player, Label lifeLabel) {
-        VBox playerBox = new VBox(10); // Espaçamento 10
+        VBox playerBox = new VBox(10);
         playerBox.setAlignment(Pos.CENTER);
         playerBox.setPadding(new Insets(20));
         playerBox.setStyle("-fx-border-color: black;");
 
         Label nameLabel = new Label(player.getName());
-        // Inicializa o label de vida com o valor atual
         lifeLabel.setText("Vida: " + player.getLife());
 
         playerBox.getChildren().addAll(nameLabel, lifeLabel);
@@ -185,24 +196,24 @@ public class GameUI extends Application {
             }
 
             rowBox.setOnMouseClicked(event -> {
-                if (!isPlayerTurn || playerHasActed) {
+                if (!game.isPlayerTurn() || game.hasPlayerActed()) {
                     return;
                 }
                 if (selectedCardView != null) {
                     Card cardToPlay = (Card) selectedCardView.getUserData();
                     Row targetRow = (Row) rowBox.getUserData();
 
-                    Action.useCard(playerA, cardToPlay, targetRow);
-                    playerHasActed = true;
+                    Action.useCard(game.getActivePlayer(), cardToPlay, targetRow, game);
+                    game.setPlayerHasActed(true);
                     updateUI();
 
                 } else if (attackingCardView != null) {
                     Card cardToMove = (Card) attackingCardView.getUserData();
                     Row targetRow = (Row) rowBox.getUserData();
 
-                    if (targetRow != cardToMove.getPosition()) {
-                        Action.moveCard(playerA, cardToMove, targetRow);
-                        playerHasActed = true;
+                    if (targetRow != cardToMove.getPosition() && cardToMove.getOwner() == game.getActivePlayer()) {
+                        Action.moveCard(game.getActivePlayer(), cardToMove, targetRow);
+                        game.setPlayerHasActed(true);
                         updateUI();
                     }
                 }
@@ -221,7 +232,7 @@ public class GameUI extends Application {
         handBox.setStyle("-fx-background-color: lightblue; -fx-border-color: black;");
 
         for (Card card : cards) {
-            StackPane cardView = createCardView(card, playerA);
+            StackPane cardView = createCardView(card, game.getPlayerA());
             handBox.getChildren().add(cardView);
         }
 
@@ -266,7 +277,7 @@ public class GameUI extends Application {
         // --- LÓGICA DE CLIQUE ---
         cardView.setOnMouseClicked(event -> {
             // 1. Bloqueia qualquer interação se não for o turno do jogador A
-            if (!isPlayerTurn) {
+            if (!game.isPlayerTurn()) {
                 return;
             }
 
@@ -276,7 +287,7 @@ public class GameUI extends Application {
             // SE A CARTA ESTÁ NO TABULEIRO
             if (isCardOnBoard) {
                 // Se pertence ao jogador ativo (é um ATACANTE em potencial)
-                if (owner == activePlayer) {
+                if (owner == game.getActivePlayer()) {
                     if (cardView == attackingCardView) {
                         cardView.setStyle("-fx-border-color: black; -fx-background-color: white;"); // Estilo normal
                         attackingCardView = null;
@@ -290,14 +301,14 @@ public class GameUI extends Application {
                 }
                 // Se pertence ao oponente (é um ALVO em potencial)
                 else {
-                    if (attackingCardView != null && playerHasActed == false) {
+                    if (attackingCardView != null && !game.hasPlayerActed()) {
                         Card attackingCard = (Card) attackingCardView.getUserData();
                         Card targetCard = (Card) cardView.getUserData();
 
                         System.out.println(attackingCard.getName() + " ataca " + targetCard.getName() + "!");
-                        Action.attackCard(activePlayer, owner, attackingCard, targetCard);
+                        Action.attackCard(game.getActivePlayer(), owner, attackingCard, targetCard);
 
-                        playerHasActed = true;
+                        game.setPlayerHasActed(true);
                         updateUI();
                     }
                 }
@@ -323,24 +334,23 @@ public class GameUI extends Application {
     private void executeOpponentTurn() {
         System.out.println("Oponente (Player B) está pensando...");
 
-        if (playerB.getHand().size() > 0) {
-            Card cardToPlay = playerB.getHand().getCards().get(0);
+        if (game.getPlayerB().getHand().size() > 0) {
+            Card cardToPlay = game.getPlayerB().getHand().getCards().get(0);
 
-            Row targetRow = findEmptyRow(this.battlefield.getFrontRowB());
+            Row targetRow = findEmptyRow(game.getBattlefield().getFrontRowB());
             if (targetRow == null)
-                targetRow = findEmptyRow(this.battlefield.getMidRowB());
+                targetRow = findEmptyRow(game.getBattlefield().getMidRowB());
             if (targetRow == null)
-                targetRow = findEmptyRow(this.battlefield.getBackRowB());
+                targetRow = findEmptyRow(game.getBattlefield().getBackRowB());
             if (targetRow == null)
-                targetRow = findEmptyRow(this.battlefield.getFrontRowA());
+                targetRow = findEmptyRow(game.getBattlefield().getFrontRowA());
             if (targetRow == null)
-                targetRow = findEmptyRow(this.battlefield.getMidRowA());
+                targetRow = findEmptyRow(game.getBattlefield().getMidRowA());
             if (targetRow == null)
-                targetRow = findEmptyRow(this.battlefield.getBackRowA());
-
+                targetRow = findEmptyRow(game.getBattlefield().getBackRowA());
             if (targetRow != null) {
                 System.out.println("Oponente joga: " + cardToPlay.getName());
-                Action.useCard(playerB, cardToPlay, targetRow);
+                Action.useCard(game.getPlayerB(), cardToPlay, targetRow, game);
             }
         }
 
@@ -355,84 +365,20 @@ public class GameUI extends Application {
         return null;
     }
 
-    private void updateUI() {
-        playerAHandBox.getChildren().clear();
-        for (Card card : playerA.getHand().getCards()) {
-            playerAHandBox.getChildren().add(createCardView(card, playerA));
-        }
-
-        playerBHandBox.getChildren().clear();
-        for (int i = 0; i < playerB.getHand().size(); i++) {
-            Rectangle cardBack = new Rectangle(CARD_WIDTH, CARD_HEIGHT, Color.DARKSLATEBLUE);
-            cardBack.setStroke(Color.BLACK);
-            playerBHandBox.getChildren().add(cardBack);
-        }
-
-        for (javafx.scene.Node node : battlefieldGrid.getChildren()) {
-            if (node instanceof HBox) {
-                HBox rowBox = (HBox) node;
-                Row rowLogic = (Row) rowBox.getUserData();
-
-                rowBox.getChildren().clear();
-
-                if (!rowLogic.getCards().isEmpty()) {
-                    for (Card card : rowLogic.getCards()) {
-                        rowBox.getChildren().add(createCardView(card, card.getOwner()));
-                    }
-                } else {
-                    for (int i = 0; i < 5; i++) {
-                        Rectangle placeholder = new Rectangle(CARD_WIDTH, CARD_HEIGHT, Color.LIGHTGRAY);
-                        placeholder.setStroke(Color.BLACK);
-                        rowBox.getChildren().add(placeholder);
-                    }
-                }
-            }
-        }
-
-        playerALifeLabel.setText("Vida: " + playerA.getLife());
-        playerBLifeLabel.setText("Vida: " + playerB.getLife());
-
-        if (activePlayer == playerA) {
-            playerAIndicator.setVisible(true);
-            playerBIndicator.setVisible(false);
-        } else {
-            playerAIndicator.setVisible(false);
-            playerBIndicator.setVisible(true);
-        }
-
-        if (selectedCardView != null) {
-            selectedCardView.setTranslateY(0);
-            selectedCardView = null;
-        }
+    private Node createPlaceholder() {
+        Rectangle placeholder = new Rectangle(CARD_WIDTH, CARD_HEIGHT, Color.LIGHTGRAY);
+        placeholder.setStroke(Color.BLACK);
+        return placeholder;
     }
 
-    private void endTurn() {
-        if (playerB.getLife() <= 0) {
-            showGameOverAlert("Vitória do Jogador A!");
-            return; // Encerra o método aqui
-        }
-        if (playerA.getLife() <= 0) {
-            showGameOverAlert("Vitória do Jogador B!");
-            return; // Encerra o método aqui
-        }
-        if (activePlayer == playerA) {
-            activePlayer = playerB;
-        } else {
-            activePlayer = playerA;
-            playerHasActed = false;
-        }
-        isPlayerTurn = (activePlayer == playerA);
-
-        updateUI();
-
-        // logica de IA
-        if (!isPlayerTurn) {
-            javafx.animation.PauseTransition pause = new javafx.animation.PauseTransition(
-                    javafx.util.Duration.seconds(1.5));
-            pause.setOnFinished(event -> executeOpponentTurn());
-            pause.play();
-        }
+    private Node createCardBackView() {
+        Rectangle cardBack = new Rectangle(CARD_WIDTH, CARD_HEIGHT, Color.DARKSLATEBLUE);
+        cardBack.setStroke(Color.BLACK);
+        cardBack.setArcWidth(10);
+        cardBack.setArcHeight(10);
+        return cardBack;
     }
+
 
     private void showGameOverAlert(String message) {
         javafx.scene.control.Alert alert = new javafx.scene.control.Alert(
