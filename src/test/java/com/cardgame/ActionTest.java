@@ -80,8 +80,8 @@ class ActionTest {
     }
 
     @Test
-    @DisplayName("Should not add card to the enemy row if its the first turn")
-    void testUseCardEnemyRowFirstTurn() {
+    @DisplayName("Should not add card to the enemy row")
+    void testUseCardEnemyRow() {
         // 1. Arrange
         playerA.getHand().drawHand(playerA.getDeck(), 1);
 
@@ -115,6 +115,24 @@ class ActionTest {
         assertFalse(startingRow.getCards().contains(cardToPlay));
         assertTrue(playerA.getPlayedCards().contains(cardToPlay));
         assertEquals(cardToPlay.getPosition(), newRow);
+    }
+
+    @Test
+    @DisplayName("Should not move card to the new row")
+    void testJumpRow(){
+        // 1. Arrange
+        playerA.getHand().drawHand(playerA.getDeck(), 1);
+
+        Card cardToPlay = playerA.getHand().getCards().get(0);
+        Row startingRow = battlefield.getFrontRowA();
+        Action.useCard(playerA, cardToPlay, startingRow, logic);
+
+        // 2. Act
+        Row newRow = battlefield.getMidRowB(); // jump rows
+        Action.moveCard(playerA, cardToPlay, newRow);
+
+        // 3. Assert
+        assertFalse(newRow.getCards().contains(cardToPlay));
     }
 
     @Test
@@ -189,12 +207,10 @@ class ActionTest {
     void testAttackPlayer() {
         // 1. Arrange
 
-        Card attackingCard = new Card("Anna", "Desc", Type.MELEE, 5, 3, null, "Set");
-        playerA.getHand().getCards().add(attackingCard);
-        // Advance turn to allow playing on enemy rows
-        logic.setTurnCount(3);
-        // Place card on opponent's back row
-        Action.useCard(playerA, attackingCard, battlefield.getBackRowB(), logic);
+        Card attackingCard = new Card("Anna", "Desc", Type.MELEE, 5, 3, null, "Set");        
+        // Manually set the card's state for an isolated test
+        playerA.getPlayedCards().add(attackingCard);
+        attackingCard.setPosition(battlefield.getBackRowB());
 
         // 2. Act
         int initialTargetLife = playerB.getLife();

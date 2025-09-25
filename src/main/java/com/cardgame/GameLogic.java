@@ -91,13 +91,9 @@ public class GameLogic {
 
     // cant use card on enemy lines on the first turn
     public boolean canPlayCard(Player player, Row targetRow) {
-        if (this.turnCount == 1) {
             if (targetRow.getSide() != player.getSide()) {
-                System.out.println("Ação inválida: Não pode jogar no campo inimigo no primeiro turno.");
                 return false;
             }
-        }
-
         return true;
     }
 }

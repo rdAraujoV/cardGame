@@ -25,9 +25,10 @@ import javafx.stage.Stage;
 public class GameUI extends Application {
     // Constantes de Layout
     private static final double CARD_WIDTH = 80, CARD_HEIGHT = 112, PADDING = 10;
-    
+
     // Logic
-    private GameLogic game; 
+    private GameLogic game;
+    private OpponentAI opponentAI;
 
     // Componentes da UI
     private StackPane selectedCardView = null;
@@ -41,6 +42,7 @@ public class GameUI extends Application {
     @Override
     public void start(Stage primaryStage) {
         this.game = new GameLogic();
+        this.opponentAI = new OpponentAI();
         primaryStage.setTitle("Card Game");
         BorderPane root = new BorderPane();
         Scene scene = new Scene(root, 1280, 720);
@@ -70,7 +72,7 @@ public class GameUI extends Application {
         topContainer.setPadding(new Insets(PADDING));
         topContainer.setAlignment(Pos.CENTER);
         root.setTop(topContainer);
-        
+
         playerBView.setOnMouseClicked(event -> {
             if (game.isPlayerTurn() && !game.hasPlayerActed() && attackingCardView != null) {
                 Card attackingCard = (Card) attackingCardView.getUserData();
@@ -89,7 +91,6 @@ public class GameUI extends Application {
         rightSideBar.setPadding(new Insets(20));
         root.setRight(rightSideBar);
 
-        
         primaryStage.setScene(scene);
         primaryStage.show();
         updateUI();
@@ -98,7 +99,7 @@ public class GameUI extends Application {
     private void endTurn() {
         game.endTurn();
         updateUI();
-        
+
         if (!game.isPlayerTurn() && game.getWinner() == null) {
             PauseTransition pause = new PauseTransition(Duration.seconds(1.5));
             pause.setOnFinished(event -> executeOpponentTurn());
@@ -124,9 +125,11 @@ public class GameUI extends Application {
                 Row rowLogic = (Row) rowBox.getUserData();
                 rowBox.getChildren().clear();
                 if (rowLogic.getCards().isEmpty()) {
-                    for (int i = 0; i < 5; i++) rowBox.getChildren().add(createPlaceholder());
+                    for (int i = 0; i < 5; i++)
+                        rowBox.getChildren().add(createPlaceholder());
                 } else {
-                    for (Card card : rowLogic.getCards()) rowBox.getChildren().add(createCardView(card, card.getOwner()));
+                    for (Card card : rowLogic.getCards())
+                        rowBox.getChildren().add(createCardView(card, card.getOwner()));
                 }
             }
         }
@@ -138,8 +141,10 @@ public class GameUI extends Application {
         playerBIndicator.setVisible(!game.isPlayerTurn());
 
         // Limpa seleção
-        if (selectedCardView != null) selectedCardView.setTranslateY(0);
-        if (attackingCardView != null) attackingCardView.setStyle("-fx-border-color: black;");
+        if (selectedCardView != null)
+            selectedCardView.setTranslateY(0);
+        if (attackingCardView != null)
+            attackingCardView.setStyle("-fx-border-color: black;");
         selectedCardView = null;
         attackingCardView = null;
 
@@ -222,6 +227,12 @@ public class GameUI extends Application {
             grid.add(rowBox, 0, i);
         }
         return grid;
+    }
+
+    // Logica de IA
+    private void executeOpponentTurn() {
+        opponentAI.executeTurn(this.game);
+        updateUI();
     }
 
     private HBox createHandView(List<Card> cards) {
@@ -330,41 +341,6 @@ public class GameUI extends Application {
         return cardView;
     }
 
-    // logica de IA
-    private void executeOpponentTurn() {
-        System.out.println("Oponente (Player B) está pensando...");
-
-        if (game.getPlayerB().getHand().size() > 0) {
-            Card cardToPlay = game.getPlayerB().getHand().getCards().get(0);
-
-            Row targetRow = findEmptyRow(game.getBattlefield().getFrontRowB());
-            if (targetRow == null)
-                targetRow = findEmptyRow(game.getBattlefield().getMidRowB());
-            if (targetRow == null)
-                targetRow = findEmptyRow(game.getBattlefield().getBackRowB());
-            if (targetRow == null)
-                targetRow = findEmptyRow(game.getBattlefield().getFrontRowA());
-            if (targetRow == null)
-                targetRow = findEmptyRow(game.getBattlefield().getMidRowA());
-            if (targetRow == null)
-                targetRow = findEmptyRow(game.getBattlefield().getBackRowA());
-            if (targetRow != null) {
-                System.out.println("Oponente joga: " + cardToPlay.getName());
-                Action.useCard(game.getPlayerB(), cardToPlay, targetRow, game);
-            }
-        }
-
-        System.out.println("Oponente finalizou o turno.");
-        endTurn();
-    }
-
-    private Row findEmptyRow(Row row) {
-        if (row.getCards().size() < 5) {
-            return row;
-        }
-        return null;
-    }
-
     private Node createPlaceholder() {
         Rectangle placeholder = new Rectangle(CARD_WIDTH, CARD_HEIGHT, Color.LIGHTGRAY);
         placeholder.setStroke(Color.BLACK);
@@ -378,7 +354,6 @@ public class GameUI extends Application {
         cardBack.setArcHeight(10);
         return cardBack;
     }
-
 
     private void showGameOverAlert(String message) {
         javafx.scene.control.Alert alert = new javafx.scene.control.Alert(

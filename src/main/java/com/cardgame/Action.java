@@ -24,12 +24,17 @@ public class Action {
         }
 
         Row oldRow = card.getPosition();
-        if (oldRow != null) {
-            oldRow.getCards().remove(card);
-        }
+        int firstPosition = oldRow.getValue();
+        int secondPosition = newRow.getValue();
 
-        newRow.addCard(card);
-        card.setPosition(newRow);
+        if (firstPosition - 1 == secondPosition || firstPosition + 1 == secondPosition) {
+            if (oldRow != null) {
+                oldRow.getCards().remove(card);
+            }
+
+            newRow.addCard(card);
+            card.setPosition(newRow);
+        }
     }
 
     public static void attackCard(Player attacker, Player target, Card attackingCard, Card targetCard) {
