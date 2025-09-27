@@ -16,14 +16,14 @@ public class GameLogic {
         this.battlefield = new Battlefield();
         List<Card> allCards = CardLoader.loadCards();
         Deck deckA = DeckFactory.createDeck("Metropolis", allCards);
-        this.playerA = Player.createPlayer("Rodrigo", deckA, 'A');
+        this.playerA = Player.createPlayer("You", deckA, 'A');
         Deck deckB = DeckFactory.createDeck("Metropolis", allCards);
-        this.playerB = Player.createPlayer("Portnoy", deckB, 'B');
+        this.playerB = Player.createPlayer("Enemy", deckB, 'B');
 
         this.playerA.getDeck().shuffle();
-        this.playerA.getHand().drawHand(this.playerA.getDeck(), 3);
+        this.playerA.getHand().drawHand(this.playerA.getDeck(), 5);
         this.playerB.getDeck().shuffle();
-        this.playerB.getHand().drawHand(this.playerB.getDeck(), 3);
+        this.playerB.getHand().drawHand(this.playerB.getDeck(), 5);
 
         this.activePlayer = this.playerA;
     }

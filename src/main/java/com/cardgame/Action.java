@@ -51,6 +51,11 @@ public class Action {
             damage = targetCard.getHp();
         }
 
+        int distance = Math.abs(targetCard.getPosition().getValue() - attackingCard.getPosition().getValue());
+        if (distance > attackingCard.getType().getRange()) {
+            return;
+        }
+
         targetHp -= damage;
 
         targetCard.setHp(targetHp);

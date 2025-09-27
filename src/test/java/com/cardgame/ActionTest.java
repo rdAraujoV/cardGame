@@ -119,7 +119,7 @@ class ActionTest {
 
     @Test
     @DisplayName("Should not move card to the new row")
-    void testJumpRow(){
+    void testJumpRow() {
         // 1. Arrange
         playerA.getHand().drawHand(playerA.getDeck(), 1);
 
@@ -199,7 +199,53 @@ class ActionTest {
 
         // 3. Assert
         assertFalse(targetRow.getCards().contains(targetCard));
-        assertFalse(playerA.getPlayedCards().contains(targetCard), "Target card should be removed from its owner's played cards.");
+        assertFalse(playerA.getPlayedCards().contains(targetCard),
+                "Target card should be removed from its owner's played cards.");
+    }
+
+    @Test
+    @DisplayName("Should not attack the target card from a out of range position")
+    void testAttackCard_OutOfRange() {
+        // 1. Arrange
+        Card attackingCard = new Card("Jordan", "Desc", Type.MELEE, 5, 1, null, "Set"); //Melee
+        playerA.getHand().getCards().add(attackingCard);
+
+        Card targetCard = new Card("Metropolis City Hall", "Desc", Type.STRUCTURE, 10, 2, null, "Set"); // 10 HP
+        playerB.getHand().getCards().add(targetCard);
+
+        playerA.getPlayedCards().add(attackingCard);
+        attackingCard.setPosition(battlefield.getBackRowA());
+
+        playerB.getPlayedCards().add(targetCard);
+        targetCard.setPosition(battlefield.getMidRowB());
+
+        // 2. Act
+        Action.attackCard(playerB, playerA, attackingCard, targetCard);
+
+        // 3. Assert
+        assertEquals(targetCard.getHp(), 10);
+    }
+
+    @Test
+    @DisplayName("Should deal damage in the target card on the ranged Range")
+    void testAttackCard_RangedRange() {
+        // 1. Arrange
+        Card attackingCard = new Card("Jordan", "Desc", Type.RANGED, 5, 1, null, "Set"); // Ranged
+        playerA.getHand().getCards().add(attackingCard);
+
+        Card targetCard = new Card("Metropolis City Hall", "Desc", Type.STRUCTURE, 10, 2, null, "Set"); // 10 HP
+        playerB.getHand().getCards().add(targetCard);
+
+        playerA.getPlayedCards().add(attackingCard);
+        attackingCard.setPosition(battlefield.getBackRowA());
+
+        playerB.getPlayedCards().add(targetCard);
+        targetCard.setPosition(battlefield.getMidRowB());
+                // 2. Act
+        Action.attackCard(playerB, playerA, attackingCard, targetCard);
+
+        // 3. Assert
+        assertEquals(targetCard.getHp(), 10);
     }
 
     @Test
@@ -207,7 +253,7 @@ class ActionTest {
     void testAttackPlayer() {
         // 1. Arrange
 
-        Card attackingCard = new Card("Anna", "Desc", Type.MELEE, 5, 3, null, "Set");        
+        Card attackingCard = new Card("Anna", "Desc", Type.MELEE, 5, 3, null, "Set");
         // Manually set the card's state for an isolated test
         playerA.getPlayedCards().add(attackingCard);
         attackingCard.setPosition(battlefield.getBackRowB());
